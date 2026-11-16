@@ -274,6 +274,40 @@
       .device-card[data-device="fan"].is-on .device-icon svg { animation: none; }
     }
 
+
+
+    /* ---------- Environment and presence monitoring ---------- */
+    .sensor-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .sensor-card { position:relative; overflow:hidden; min-height:190px; padding:19px; border:1px solid var(--line); border-radius:19px; background:linear-gradient(145deg,rgba(23,37,63,.92),rgba(13,23,42,.94)); box-shadow:0 14px 38px rgba(0,0,0,.14); }
+    .sensor-card-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .sensor-icon { width:42px; height:42px; border-radius:13px; display:grid; place-items:center; background:rgba(101,167,255,.10); color:#83baff; border:1px solid rgba(101,167,255,.16); }
+    .sensor-icon svg { width:22px; height:22px; }
+    .sensor-label { color:var(--muted); font-size:11px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; }
+    .sensor-value-row { display:flex; align-items:baseline; gap:5px; margin-top:18px; }
+    .sensor-value { font:700 33px/1 'Space Grotesk'; letter-spacing:-1px; color:#f3f7ff; }
+    .sensor-unit { color:#aebed7; font-size:14px; font-weight:600; }
+    .sensor-status { display:inline-flex; align-items:center; gap:6px; max-width:100%; margin-top:12px; padding:6px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); background:rgba(255,255,255,.025); font-size:10px; font-weight:700; letter-spacing:.35px; }
+    .sensor-status::before { content:''; width:6px; height:6px; flex:0 0 6px; border-radius:50%; background:currentColor; }
+    .sensor-status[data-tone="good"] { color:var(--green); border-color:rgba(93,224,160,.24); background:rgba(93,224,160,.06); }
+    .sensor-status[data-tone="info"] { color:#8fc2ff; border-color:rgba(101,167,255,.24); background:rgba(101,167,255,.06); }
+    .sensor-status[data-tone="caution"] { color:#f2c46e; border-color:rgba(242,196,110,.25); background:rgba(242,196,110,.06); }
+    .sensor-status[data-tone="alert"] { color:#ff9aaa; border-color:rgba(255,113,133,.25); background:rgba(255,113,133,.06); }
+    .sensor-note { color:#7f91ad; font-size:10px; line-height:1.45; margin-top:9px; }
+    .presence-value { font:600 20px/1.2 'Space Grotesk'; margin-top:19px; color:#f3f7ff; }
+    .presence-meta { color:var(--muted); font-size:11px; line-height:1.5; margin-top:8px; }
+    .clap-panel { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; padding:14px; border:1px solid var(--line); background:rgba(16,27,47,.62); border-radius:17px; }
+    .clap-item { display:flex; align-items:center; gap:9px; min-width:0; }
+    .clap-count { width:31px; height:31px; flex:0 0 31px; display:grid; place-items:center; border-radius:10px; background:rgba(101,167,255,.10); border:1px solid rgba(101,167,255,.16); color:#a8ceff; font:700 13px 'Space Grotesk'; }
+    .clap-copy { min-width:0; }
+    .clap-copy strong { display:block; font-size:11px; line-height:1.25; }
+    .clap-copy small { display:block; color:var(--muted); margin-top:3px; font-size:9px; line-height:1.3; }
+    .loading-panel { max-width:420px; margin:7vh auto 0; border:1px solid var(--line); border-radius:20px; padding:24px; text-align:center; color:var(--muted); background:rgba(18,28,49,.82); }
+    .loading-spinner { width:24px; height:24px; margin:0 auto 12px; border:2px solid rgba(157,180,220,.2); border-top-color:var(--cyan); border-radius:50%; animation:alphaSpin .8s linear infinite; }
+    @keyframes alphaSpin { to { transform:rotate(360deg); } }
+    @media (max-width:900px) { .sensor-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .sensor-card:last-child { grid-column:1 / -1; } }
+    @media (max-width:560px) { .sensor-grid { grid-template-columns:1fr; gap:10px; } .sensor-card:last-child { grid-column:auto; } .sensor-card { min-height:160px; padding:16px; } .sensor-value { font-size:30px; } .clap-panel { grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px 8px; } }
+    @media (prefers-reduced-motion:reduce) { .loading-spinner { animation:none; } }
+
   </style>
 </head>
 <body>
@@ -291,7 +325,13 @@
       </div>
     </header>
 
-    <section id="loginView">
+    <section id="authLoading" class="loading-panel" aria-live="polite">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <strong style="display:block;color:#eaf2ff;margin-bottom:5px">Restoring your session</strong>
+      <span style="font-size:12px">Checking your secure sign-in status…</span>
+    </section>
+
+    <section id="loginView" hidden>
       <div class="login-panel">
         <div class="login-symbol">A</div>
         <div class="eyebrow">Your room, in control</div>
@@ -309,15 +349,15 @@
 
     <section id="dashboard" hidden>
       <div class="hero">
-        <div><div class="eyebrow">Home overview</div><h1>Good to have you<br/>back.</h1><p>Manage your room devices in real time, from wherever you are.</p></div>
+        <div><div class="eyebrow">Home overview</div><h1>Good to have you<br/>back.</h1><p>Control your appliances and check your room environment in one place.</p></div>
         <div class="time-card"><div id="clock">--:--:--</div><div id="dateText">Loading date…</div></div>
       </div>
       <div class="summary">
         <div class="summary-card"><div class="summary-top"><span>CONNECTED DEVICES</span><span>⌘</span></div><div class="summary-value">3</div><div class="summary-note">Your room control points</div></div>
-        <div class="summary-card"><div class="summary-top"><span>DEVICES ACTIVE</span><span>◉</span></div><div class="summary-value" id="activeCount">— / 3</div><div class="summary-note">Live Firebase status</div></div>
-        <div class="summary-card"><div class="summary-top"><span>SYSTEM STATUS</span><span>✧</span></div><div class="summary-value" id="systemStatus" style="font-size:20px">Connecting</div><div class="summary-note">Cloud database connection</div></div>
+        <div class="summary-card"><div class="summary-top"><span>DEVICES ACTIVE</span><span>◉</span></div><div class="summary-value" id="activeCount">— / 3</div><div class="summary-note">Live relay states from Firebase</div></div>
+        <div class="summary-card"><div class="summary-top"><span>SYSTEM STATUS</span><span>✧</span></div><div class="summary-value" id="systemStatus" style="font-size:20px">Connecting</div><div class="summary-note">Browser-to-Firebase connection</div></div>
       </div>
-      <div class="section-head"><h2>Room devices</h2><span>Tap a switch to control a device</span></div>
+      <div class="section-head"><h2>Room devices</h2><span>Control from this dashboard, physical switches or clap commands</span></div>
       <div class="device-grid">
         <article class="device-card" data-device="main" id="card1">
           <div class="device-top"><div class="device-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M8.5 14.5a7 7 0 1 1 7 0c-.8.6-1.2 1.4-1.3 2.5h-4.4c-.1-1.1-.5-1.9-1.3-2.5Z"/><path d="M12 2v2M4.9 4.9l1.4 1.4M19.1 4.9l-1.4 1.4"/></svg></div><div class="state-pill"><span class="mini-dot"></span><span id="state1">OFFLINE</span></div></div>
@@ -336,6 +376,48 @@
         </article>
       </div>
       <div class="actions"><div><strong>Room-wide control</strong><small>Switch off all three connected devices.</small></div><button class="action-btn" id="allOffBtn">Power off all&nbsp; ↓</button></div>
+      <div class="section-head"><h2>Hands-free shortcuts</h2><span>Clap control</span></div>
+      <div class="clap-panel" aria-label="Clap control shortcuts">
+        <div class="clap-item"><div class="clap-count">1×</div><div class="clap-copy"><strong>All OFF</strong><small>Turn off all appliances</small></div></div>
+        <div class="clap-item"><div class="clap-count">2×</div><div class="clap-copy"><strong>Main Light</strong><small>Turn on main light only</small></div></div>
+        <div class="clap-item"><div class="clap-count">3×</div><div class="clap-copy"><strong>Sleep Light</strong><small>Turn on sleep light only</small></div></div>
+        <div class="clap-item"><div class="clap-count">4×</div><div class="clap-copy"><strong>Fan</strong><small>Turn on fan only</small></div></div>
+      </div>
+
+      <div class="section-head"><h2>Room environment</h2><span>Sensor readings from ESP32</span></div>
+      <div class="sensor-grid">
+        <article class="sensor-card" aria-label="Room temperature">
+          <div class="sensor-card-top">
+            <div class="sensor-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V5a3 3 0 0 0-6 0v9.76a5 5 0 1 0 6 0Z"/><path d="M11 11v7"/></svg></div>
+            <span class="sensor-label">Temperature</span>
+          </div>
+          <div class="sensor-value-row"><span class="sensor-value" id="temperatureValue">—</span><span class="sensor-unit">°C</span></div>
+          <div class="sensor-status" id="temperatureStatus" data-tone="neutral">Waiting for sensor</div>
+          <div class="sensor-note">Room temperature · DHT11</div>
+        </article>
+
+        <article class="sensor-card" aria-label="Room humidity">
+          <div class="sensor-card-top">
+            <div class="sensor-icon" style="color:#63b9ff;background:rgba(72,166,255,.10);border-color:rgba(72,166,255,.17)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2S5.5 10.1 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 10.1 12 3.2 12 3.2Z"/><path d="M9 15.5a3 3 0 0 0 3 3"/></svg></div>
+            <span class="sensor-label">Humidity</span>
+          </div>
+          <div class="sensor-value-row"><span class="sensor-value" id="humidityValue">—</span><span class="sensor-unit">%</span></div>
+          <div class="sensor-status" id="humidityStatus" data-tone="neutral">Waiting for sensor</div>
+          <div class="sensor-note">Relative humidity · DHT11</div>
+        </article>
+
+        <article class="sensor-card" aria-label="Room motion status">
+          <div class="sensor-card-top">
+            <div class="sensor-icon" style="color:#6ee0ae;background:rgba(93,224,160,.09);border-color:rgba(93,224,160,.17)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/></svg></div>
+            <span class="sensor-label">Room activity</span>
+          </div>
+          <div class="presence-value" id="motionStatus">Waiting for sensor</div>
+          <div class="sensor-status" id="motionBadge" data-tone="neutral">PIR initializing</div>
+          <div class="presence-meta">Last motion: <strong id="lastMotionValue" style="color:#dce8fa;font-weight:600">Not recorded yet</strong></div>
+          <div class="sensor-note">PIR reports movement, not continuous human presence.</div>
+        </article>
+      </div>
+
       <div class="notice error" id="dashboardError" role="alert"></div>
       <div class="notice info" id="dashboardInfo" role="status"></div>
     </section>
@@ -348,10 +430,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
   <script>
-    // IMPORTANT: These settings must belong to the SAME Firebase project used by your ESP32.
-    // Confirm apiKey and authDomain in Firebase Console > Project settings > General.
-    // Do NOT put the ESP32's Wi-Fi SSID/password or a Firebase user's password in this public HTML.
-    // The browser connects to Firebase over the visitor's internet connection and uses Firebase Auth.
+    // Firebase configuration: keep these values aligned with your ESP32 project.
+    // The Firebase Web API key is a public project identifier, not a user password.
+    // Never put Wi-Fi credentials or Firebase user passwords in this public HTML.
     const firebaseConfig = {
       apiKey: "AIzaSyC34g9IviObM9nRtoMpr1mfh3sVKXgZ8as",
       authDomain: "esp-32-room.firebaseapp.com",
@@ -366,95 +447,294 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // Exactly matches the three paths used by the ESP32 firmware.
+    // Explicitly remember this user on this browser/device until logout.
+    // Firebase's browser default is also LOCAL, but setting it explicitly
+    // avoids unintentionally inheriting a previous SESSION/NONE setting.
+    const persistencePromise = auth.setPersistence(
+      firebase.auth.Auth.Persistence.LOCAL
+    ).then(() => true).catch(error => {
+      console.warn("Could not set LOCAL authentication persistence:", error);
+      return false;
+    });
+
     const devices = [
       { id: 1, name: "Main Light", path: "relay1" },
       { id: 2, name: "Sleep Light", path: "relay2" },
       { id: 3, name: "Fan", path: "relay3" }
     ];
-    const states = { 1: null, 2: null, 3: null };
-    let listenersStarted = false;
 
-    const $ = (id) => document.getElementById(id);
+    const states = { 1: null, 2: null, 3: null };
+    const sensorData = {
+      temperature: null,
+      humidity: null,
+      motionDetected: null,
+      lastMotion: null
+    };
+
+    let firebaseConnected = false;
+    let dashboardListenersStarted = false;
+    let activeListeners = [];
+    let authUser = null;
+    let infoNoticeTimer = null;
+
+    const $ = id => document.getElementById(id);
     const loginView = $("loginView");
     const dashboard = $("dashboard");
+    const authLoading = $("authLoading");
     const loginForm = $("loginForm");
     const loginBtn = $("loginBtn");
 
     function showNotice(id, message, type = "error") {
       const el = $(id);
+      if (!el) return;
       el.textContent = message;
       el.className = `notice show ${type}`;
     }
+
     function clearNotice(id) {
       const el = $(id);
+      if (!el) return;
       el.textContent = "";
       el.className = "notice";
     }
-    function setConnection(online) {
-      $("connectionDot").classList.toggle("online", online);
-      $("connectionText").textContent = online ? "Cloud connected" : "Cloud disconnected";
-      $("systemStatus").textContent = online ? "Connected" : "Offline";
+
+    function showInfo(message, duration = 3500) {
+      clearTimeout(infoNoticeTimer);
+      showNotice("dashboardInfo", message, "info");
+      infoNoticeTimer = setTimeout(() => clearNotice("dashboardInfo"), duration);
     }
+
+    function setConnection(online) {
+      firebaseConnected = online;
+      $("connectionDot").classList.toggle("online", online);
+      $("connectionText").textContent = online ? "Firebase connected" : "Firebase unavailable";
+      $("systemStatus").textContent = online ? "Connected" : "Offline";
+      $("allOffBtn").disabled = !online;
+      devices.forEach(device => renderDevice(device.id));
+    }
+
     function renderDevice(id) {
       const value = states[id];
       const card = $("card" + id);
       const button = $("btn" + id);
       const known = typeof value === "boolean";
+
       card.classList.toggle("is-on", value === true);
       $("status" + id).textContent = known ? (value ? "ON" : "OFF") : "—";
       $("state" + id).textContent = known ? (value ? "ACTIVE" : "STANDBY") : "WAITING";
-      button.disabled = !known;
+      button.disabled = !known || !firebaseConnected;
       button.setAttribute("aria-pressed", known && value ? "true" : "false");
     }
+
     function renderSummary() {
-      const known = devices.filter(d => typeof states[d.id] === "boolean").length;
-      const active = devices.filter(d => states[d.id] === true).length;
-      $("activeCount").textContent = known === 3 ? `${active} / 3` : `${known} / 3`;
+      const known = devices.filter(device => typeof states[device.id] === "boolean").length;
+      const active = devices.filter(device => states[device.id] === true).length;
+      $("activeCount").textContent = known === 3 ? `${active} / 3` : `${active} active · ${known}/3 known`;
     }
-    function startRelayControl() {
-      if (listenersStarted) return;
-      listenersStarted = true;
-      db.ref(".info/connected").on("value", snapshot => setConnection(snapshot.val() === true));
+
+    function renderSensorStatus(elementId, label, tone = "neutral") {
+      const el = $(elementId);
+      el.textContent = label;
+      el.dataset.tone = tone;
+    }
+
+    function temperatureLabel(value) {
+      if (value < 18) return ["Too Cold", "info"];
+      if (value < 21) return ["Cool", "info"];
+      if (value <= 28) return ["Comfortable", "good"];
+      if (value <= 32) return ["Warm", "caution"];
+      if (value <= 35) return ["Very Warm", "caution"];
+      return ["Hot", "alert"];
+    }
+
+    function humidityLabel(value) {
+      if (value < 30) return ["Very Dry", "info"];
+      if (value < 40) return ["Dry", "info"];
+      if (value <= 60) return ["Comfortable", "good"];
+      if (value <= 65) return ["Slightly Humid", "caution"];
+      if (value <= 70) return ["Humid", "caution"];
+      return ["Very Humid", "alert"];
+    }
+
+    function renderTemperature() {
+      const value = sensorData.temperature;
+      if (!Number.isFinite(value)) {
+        $("temperatureValue").textContent = "—";
+        renderSensorStatus("temperatureStatus", "Waiting for sensor", "neutral");
+        return;
+      }
+      $("temperatureValue").textContent = value.toFixed(1);
+      const [label, tone] = temperatureLabel(value);
+      renderSensorStatus("temperatureStatus", label, tone);
+    }
+
+    function renderHumidity() {
+      const value = sensorData.humidity;
+      if (!Number.isFinite(value)) {
+        $("humidityValue").textContent = "—";
+        renderSensorStatus("humidityStatus", "Waiting for sensor", "neutral");
+        return;
+      }
+      $("humidityValue").textContent = value.toFixed(1);
+      const [label, tone] = humidityLabel(value);
+      renderSensorStatus("humidityStatus", label, tone);
+    }
+
+    function formatLastMotion(value) {
+      const timestamp = Number(value);
+      if (!Number.isFinite(timestamp) || timestamp <= 0) return "Not recorded yet";
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) return "Time unavailable";
+      return date.toLocaleString([], {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+      });
+    }
+
+    function renderPresence() {
+      const value = sensorData.motionDetected;
+      if (typeof value !== "boolean") {
+        $("motionStatus").textContent = "Waiting for sensor";
+        renderSensorStatus("motionBadge", "PIR initializing", "neutral");
+      } else if (value) {
+        $("motionStatus").textContent = "Motion detected";
+        renderSensorStatus("motionBadge", "Movement detected now", "good");
+      } else {
+        $("motionStatus").textContent = "No recent motion";
+        renderSensorStatus("motionBadge", "Room movement not detected", "info");
+      }
+      $("lastMotionValue").textContent = formatLastMotion(sensorData.lastMotion);
+    }
+
+    function resetDashboardData() {
+      states[1] = states[2] = states[3] = null;
+      sensorData.temperature = null;
+      sensorData.humidity = null;
+      sensorData.motionDetected = null;
+      sensorData.lastMotion = null;
+      firebaseConnected = false;
+      devices.forEach(device => renderDevice(device.id));
+      renderSummary();
+      renderTemperature();
+      renderHumidity();
+      renderPresence();
+      setConnection(false);
+    }
+
+    function listenToValue(path, callback) {
+      const ref = db.ref(path);
+      const errorCallback = error => {
+        showNotice("dashboardError", `Could not read ${path}: ${error.message}`);
+      };
+      ref.on("value", callback, errorCallback);
+      activeListeners.push(() => ref.off("value", callback));
+      activeListeners.push(() => ref.off("value", errorCallback));
+    }
+
+    function stopDashboardListeners() {
+      activeListeners.forEach(unsubscribe => {
+        try { unsubscribe(); } catch (error) { console.warn("Listener cleanup:", error); }
+      });
+      activeListeners = [];
+      dashboardListenersStarted = false;
+      resetDashboardData();
+    }
+
+    function startDashboardListeners() {
+      if (dashboardListenersStarted || !authUser) return;
+      dashboardListenersStarted = true;
+
+      listenToValue(".info/connected", snapshot => {
+        setConnection(snapshot.val() === true);
+      });
+
       devices.forEach(device => {
-        db.ref(device.path).on("value", snapshot => {
+        listenToValue(device.path, snapshot => {
           const value = snapshot.val();
           states[device.id] = typeof value === "boolean" ? value : null;
           renderDevice(device.id);
           renderSummary();
+
           if (value === null) {
-            showNotice("dashboardError", `${device.name}: database value is missing. Create ${device.path} as a Boolean (true/false) in Realtime Database.`);
-          }
-        }, error => showNotice("dashboardError", `Could not read ${device.name}: ${error.message}`));
-        $("btn" + device.id).addEventListener("click", async () => {
-          const button = $("btn" + device.id);
-          if (typeof states[device.id] !== "boolean") return;
-          button.disabled = true;
-          clearNotice("dashboardError");
-          try {
-            // Transaction avoids toggling from a stale browser value.
-            await db.ref(device.path).transaction(current => typeof current === "boolean" ? !current : current);
-          } catch (error) {
-            showNotice("dashboardError", `Could not update ${device.name}: ${error.message}`);
-          } finally {
-            renderDevice(device.id);
+            showNotice(
+              "dashboardError",
+              `${device.name}: ${device.path} is missing or has no Boolean value. Check the Firebase database.`
+            );
           }
         });
       });
+
+      listenToValue("environment/temperature", snapshot => {
+        const raw = snapshot.val();
+        const value = raw === null ? NaN : Number(raw);
+        sensorData.temperature = Number.isFinite(value) ? value : null;
+        renderTemperature();
+      });
+
+      listenToValue("environment/humidity", snapshot => {
+        const raw = snapshot.val();
+        const value = raw === null ? NaN : Number(raw);
+        sensorData.humidity = Number.isFinite(value) ? value : null;
+        renderHumidity();
+      });
+
+      listenToValue("presence/motionDetected", snapshot => {
+        const value = snapshot.val();
+        sensorData.motionDetected = typeof value === "boolean" ? value : null;
+        renderPresence();
+      });
+
+      listenToValue("presence/lastMotion", snapshot => {
+        sensorData.lastMotion = snapshot.val();
+        renderPresence();
+      });
     }
 
-    loginForm.addEventListener("submit", async (event) => {
+    // Register relay-button handlers once, not on every login.
+    devices.forEach(device => {
+      $("btn" + device.id).addEventListener("click", async () => {
+        if (!auth.currentUser || !firebaseConnected) return;
+        if (typeof states[device.id] !== "boolean") return;
+
+        const button = $("btn" + device.id);
+        button.disabled = true;
+        clearNotice("dashboardError");
+
+        try {
+          const result = await db.ref(device.path).transaction(current => {
+            return typeof current === "boolean" ? !current : current;
+          });
+          if (!result.committed) {
+            throw new Error("The database did not commit this change.");
+          }
+        } catch (error) {
+          showNotice("dashboardError", `Could not update ${device.name}: ${error.message}`);
+        } finally {
+          renderDevice(device.id);
+        }
+      });
+    });
+
+    // Firebase Authentication: persist sign-in until explicit logout.
+    loginForm.addEventListener("submit", async event => {
       event.preventDefault();
       clearNotice("loginError");
+
       const email = $("email").value.trim();
       const password = $("password").value;
       if (!email || !password) {
         showNotice("loginError", "Enter your Firebase Authentication email and password.");
         return;
       }
+
       loginBtn.disabled = true;
       loginBtn.textContent = "Signing in…";
+
       try {
+        const persistenceEnabled = await persistencePromise;
+        if (!persistenceEnabled) {
+          showNotice("loginError", "Your browser could not confirm remembered sign-in. Check browser site-storage settings and try again.");
+        }
         await auth.signInWithEmailAndPassword(email, password);
       } catch (error) {
         showNotice("loginError", `Sign-in failed: ${error.message}`);
@@ -465,44 +745,66 @@
     });
 
     async function logout() {
-      try { await auth.signOut(); }
-      catch (error) { showNotice("dashboardError", `Logout failed: ${error.message}`); }
+      try {
+        await auth.signOut();
+      } catch (error) {
+        showNotice("dashboardError", `Logout failed: ${error.message}`);
+      }
     }
     $("logoutTop").addEventListener("click", logout);
+
     $("allOffBtn").addEventListener("click", async () => {
+      if (!auth.currentUser || !firebaseConnected) return;
+
       const button = $("allOffBtn");
       button.disabled = true;
       clearNotice("dashboardError");
+
       try {
-        // One atomic update for the three existing ESP32 paths.
         await db.ref("/").update({ relay1: false, relay2: false, relay3: false });
-        showNotice("dashboardInfo", "All devices have been switched off.", "info");
-        setTimeout(() => clearNotice("dashboardInfo"), 3500);
+        showInfo("All three appliances have been switched off.");
       } catch (error) {
         showNotice("dashboardError", `Could not switch devices off: ${error.message}`);
-      } finally { button.disabled = false; }
+      } finally {
+        button.disabled = !firebaseConnected;
+      }
     });
 
+    // Hide dashboard until Firebase has restored the authentication state.
     auth.onAuthStateChanged(user => {
+      authLoading.hidden = true;
+      authUser = user;
+
       if (user) {
         loginView.hidden = true;
         dashboard.hidden = false;
         $("logoutTop").hidden = false;
-        startRelayControl();
+        startDashboardListeners();
       } else {
+        stopDashboardListeners();
         dashboard.hidden = true;
         loginView.hidden = false;
         $("logoutTop").hidden = true;
         $("email").value = "";
         $("password").value = "";
+        clearNotice("loginError");
       }
+    }, error => {
+      authLoading.hidden = true;
+      loginView.hidden = false;
+      showNotice("loginError", `Authentication status error: ${error.message}`);
     });
 
     function updateClock() {
       const now = new Date();
-      $("clock").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      $("dateText").textContent = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      $("clock").textContent = now.toLocaleTimeString([], {
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+      });
+      $("dateText").textContent = now.toLocaleDateString([], {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
+      });
     }
+
     updateClock();
     setInterval(updateClock, 1000);
     $("year").textContent = new Date().getFullYear();
